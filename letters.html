@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script type="text/javascript" src="/static/d3.v3.min.js"></script>
+    <style>
+        body {
+          font: 10px sans-serif;
+        }
+        .axis path,
+        .axis line {
+          fill: none;
+          stroke: #000;
+          shape-rendering: crispEdges;
+        }
+        .bar {
+          fill: steelblue;
+        }
+        .x.axis path {
+          display: none;
+        }
+    </style>
+</head>
+<body>
+<script>
+
+var margin = {top: 20, right: 20, bottom: 30, left: 40},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+var formatPercent = d3.format(".0%");
+
+var x = d3.scale.ordinal()
+    .rangeRoundBands([0, width], .1);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left")
+    .tickFormat(formatPercent);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+var alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+var data = [];
+for(var i=0;i<alpha.length;i++){
+  var char = alpha[i];
+  data.push({letter: char, frequency:0});
+}
+
+x.domain(data.map(function(d) { return d.letter; }));
+y.domain([0, 1])//d3.max(data, function(d) { return d.frequency; })]);
+
+svg.append("g")
+  .attr("class", "x axis")
+  .attr("transform", "translate(0," + height + ")")
+  .call(xAxis);
+
+svg.append("g")
+  .attr("class", "y axis")
+  .call(yAxis)
+.append("text")
+  .attr("transform", "rotate(-90)")
+  .attr("y", 6)
+  .attr("dy", ".71em")
+  .style("text-anchor", "end");
+
+
+svg.selectAll(".bar")
+  .data(data)
+.enter().append("rect")
+  .attr("class", "bar")
+  .attr("x", function(d) { return x(d.letter); })
+  .attr("width", x.rangeBand())
+  .attr("y", function(d) { return y(d.frequency); })
+  .attr("height", function(d) { return height - y(d.frequency); });
+
+function update_data(data){
+  svg.selectAll(".bar").data(data).transition()
+                .attr("y", function(d) { return y(d.frequency); })
+                .attr("height", function(d) { return height - y(d.frequency); })
+                .duration(750);
+//        y.domain([0, 1])//d3.max(data, function(d) { return d.frequency; })]);
+//        d3.select('body').transition().select(".y.axis") // change the y axis
+//            .duration(750)
+//            .call(yAxis);
+}
+window.onload = function(){
+    document.getElementById('text').onkeyup = function(){
+      var text = this.value;
+      var letters = {};
+      var data = [];
+      var text_len = 0;
+      for(var i=0;i<text.length;i++){
+          var char = text[i].toUpperCase();
+          if(alpha.indexOf(char) != -1){
+              text_len += 1;
+              if(!letters[char])
+                letters[char] = 0;
+              letters[char] += 1;
+          }
+      }
+      for(i=0;i<alpha.length;i++){
+          char = alpha[i];
+          if(!letters[char])
+            letters[char] = 0;
+          data.push({letter: char, frequency:letters[char]/(text_len || 1)});
+      }
+      console.log(data)
+      update_data(data)
+    }
+};
+
+</script>
+<textarea id="text" rows="4" cols="120"></textarea>
+</body>
+</html>

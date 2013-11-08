@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script type="text/javascript" src="/static/d3.v3.min.js"></script>
+</head>
+<body>
+<div id="viz"></div>
+<script type="text/javascript">
+    var sampleSVG = d3.select("#viz")
+            .append("svg")
+            .attr("width", 1024)
+            .attr("height", 200);
+
+    var dataset = ['c1','c2','c3'];
+    sampleSVG.selectAll("circle").data(dataset, String).enter().append("circle")
+            .style("stroke", "gray")
+            .style("fill", "white")
+            .attr("r", 40)
+            .attr("cx", function(d,i){
+                return i * 100 + 50
+            })
+            .attr("cy", 50)
+            .on("mouseover", function(){d3.select(this).style("fill", "red");})
+            .on("mouseout", function(){d3.select(this).style("fill", "white");});
+    sampleSVG.append('rect')
+            .style('stroke', 'gray')
+            .style('fill', 'black')
+            .attr('width', 50)
+            .attr('height', 50)
+            .attr('x', 20)
+            .attr('y', 100);
+    sampleSVG.select('rect').on('click', function(){
+        var evtSource = new EventSource("/events");
+        evtSource.addEventListener("action", function(e) {
+            console.log(e.data);
+            sampleSVG.selectAll('circle').filter(function(d){
+                return d == e.data
+            }).style('fill', 'red').transition().style('fill', 'white')
+        }, false);
+    });
+
+    d3.select("body").on("keydown", function(event) {
+        sampleSVG.selectAll('circle').style('fill', 'white')
+        var char = String.fromCharCode(d3.event.keyCode).toLowerCase()
+        sampleSVG.selectAll('circle').filter(function(d){
+            return d == char
+        }).attr('fill', 'red')
+          .transition().ease('quad').duration(30000).attr('fill', 'white')
+    })
+</script>
+</body>
+</html>
