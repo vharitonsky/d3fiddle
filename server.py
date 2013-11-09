@@ -28,6 +28,11 @@ def sse():
 def letters():
     return open('letters.html').read()
 
+@route('/ripples')
+def ripples():
+    return open('ripples.html').read()
+
+
 @route('/static/<path:path>')
 def callback(path):
     return static_file(path, 'static')
