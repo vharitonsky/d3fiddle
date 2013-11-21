@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script type="text/javascript" src="/static/d3.v3.min.js"></script>
+    <meta charset="utf-8">
+    <style>
+
+        body {
+          font: 10px sans-serif;
+        }
+
+        .axis path,
+        .axis line {
+          fill: none;
+          stroke: #000;
+          shape-rendering: crispEdges;
+        }
+
+        .x.axis path {
+          display: none;
+        }
+
+        .line {
+          fill: none;
+          stroke: steelblue;
+          stroke-width: 1.5px;
+        }
+
+    </style>
+</head>
+<body>
+<div>
+    <a href="#" id="by_date">By date</a>
+    <a href="#" id="by_hour">By hour</a>
+    <a href="#" id="by_commiter">By commiter</a>
+</div>
+    <script>
+
+    var margin = {top: 20, right: 20, bottom: 30, left: 50},
+        width = 1280 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    document.getElementById('by_date').onclick = function(){
+        svg.selectAll('*').remove();
+        var parseDate = d3.time.format("%Y-%m-%d").parse;
+
+        var x = d3.time.scale()
+            .range([0, width]);
+
+        var y = d3.scale.linear()
+            .range([height, 0]);
+
+        var xAxis = d3.svg.axis()
+            .scale(x)
+            .scale(x)
+            .orient("bottom");
+
+        var yAxis = d3.svg.axis()
+            .scale(y)
+            .orient("left");
+
+        var line = d3.svg.line()
+        .x(function(d) { return x(d.date); })
+        .y(function(d) { return y(d.commits); });
+
+        d3.tsv("/static/data_by_date.tsv", function(error, data) {
+          data.forEach(function(d) {
+            d.date = parseDate(d.date);
+            d.commits = +d.commits;
+          });
+
+          x.domain(d3.extent(data, function(d) { return d.date; }));
+          y.domain(d3.extent(data, function(d) { return d.commits; }));
+
+          svg.append("g")
+              .attr("class", "x axis")
+              .attr("transform", "translate(0," + height + ")")
+              .call(xAxis);
+
+          svg.append("g")
+              .attr("class", "y axis")
+              .call(yAxis)
+            .append("text")
+              .attr("transform", "rotate(-90)")
+              .attr("y", 6)
+              .attr("dy", ".71em")
+              .style("text-anchor", "end")
+              .text("Commits (no)");
+
+          svg.append("path")
+              .datum(data)
+              .attr("class", "line")
+              .attr("d", line);
+          return false;
+        });
+    };
+
+    document.getElementById('by_hour').onclick = function(){
+        svg.selectAll('*').remove();
+        var x = d3.scale.linear()
+            .range([0, width]);
+
+        var y = d3.scale.linear()
+            .range([height, 0]);
+
+        var xAxis = d3.svg.axis()
+            .scale(x)
+            .scale(x)
+            .orient("bottom");
+
+        var yAxis = d3.svg.axis()
+            .scale(y)
+            .orient("left");
+
+        var line = d3.svg.line()
+        .x(function(d) { return x(d.hour); })
+        .y(function(d) { return y(d.commits); });
+
+        d3.tsv("/static/data_by_hour.tsv", function(error, data) {
+          data.forEach(function(d) {
+            d.hour = +d.hour;
+            d.commits = +d.commits;
+          });
+
+          x.domain(d3.extent(data, function(d) { return d.hour; }));
+          y.domain(d3.extent(data, function(d) { return d.commits; }));
+
+          svg.append("g")
+              .attr("class", "x axis")
+              .attr("transform", "translate(0," + height + ")")
+              .call(xAxis);
+
+          svg.append("g")
+              .attr("class", "y axis")
+              .call(yAxis)
+            .append("text")
+              .attr("transform", "rotate(-90)")
+              .attr("y", 6)
+              .attr("dy", ".71em")
+              .style("text-anchor", "end")
+              .text("Commits (no)");
+
+          svg.append("path")
+              .datum(data)
+              .attr("class", "line")
+              .attr("d", line);
+          return false;
+        });
+    };
+
+    document.getElementById('by_commiter').onclick = function(){
+
+        d3.tsv("/static/data_by_commiter.tsv", function(error, data) {
+        svg.selectAll('*').remove();
+        var dataset = [];
+
+        data.forEach(function(d) {
+            d.commits = +d.commits;
+            dataset.push(d.commits)
+        });
+
+        svg.selectAll("rect")
+           .data(dataset)
+           .enter()
+           .append("rect")
+           .attr("x", function(d, i){return i * width/dataset.length})
+           .attr("y", function(d, i){return height - d})
+           .attr("width", width/dataset.length - 2)
+           .attr("height", function(d, i){return d})
+           .attr("fill", "teal");
+
+        var texts = svg.selectAll("text")
+           .data(dataset)
+           .enter();
+        texts.append("text")
+           .attr("x", function(d, i){return i * width/dataset.length + 20})
+           .attr("y", function(d, i){return height})
+           .text(function(d, i) {return data[i].commiter;})
+           .attr("font-family", "sans-serif")
+           .attr("font-size", "11px")
+           .attr("fill", "black")
+           .attr("transform", function(d, i) {
+                return "rotate(-90 "+ (i * width/dataset.length + 20) +","+ (height) +")"
+            });
+        texts.append("text")
+           .attr("x", function(d, i){return i * width/dataset.length + 5})
+           .attr("y", function(d, i){return height + 10})
+           .text(function(d, i){return d})
+           .attr("font-family", "sans-serif")
+           .attr("font-size", "11px")
+           .attr("fill", "black");
+        });
+
+    }
+
+    </script>
+
+</body>
+</html>
