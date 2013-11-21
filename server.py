@@ -36,7 +36,6 @@ def ripples():
 def repo():
     return open('repo.html').read()
 
-
 @route('/static/<path:path>')
 def callback(path):
     return static_file(path, 'static')
